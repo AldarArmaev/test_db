@@ -1,3 +1,4 @@
+import { runNetworkProbe } from './network-probe.mjs';
 import http from 'node:http';
 import { mkdir, stat, open, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -38,5 +39,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(req.url === '/' || req.url === '/health' ? 200 : 404, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end(req.url === '/' || req.url === '/health' ? 'Storage probe is running. Results are in container logs.\n' : 'Not found\n');
 });
-server.listen(Number(process.env.PORT || 8080), '0.0.0.0');
+server.listen(Number(process.env.PORT || 8080), '0.0.0.0', () => {
+  void runNetworkProbe().catch(() => console.log(JSON.stringify({ event: 'NETWORK_PROBE_FAILED' })));
+});
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close());
